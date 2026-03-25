@@ -1,0 +1,2 @@
+validity average_pairwise_L0_distance average_pairwise_L1_distance average_pairwise_binned_L0_distance accuracy IFr valid_IFr
+1 13.048717948717949 6.715604340355465 12.037179487179488 0.72 0.0675 0.07535
