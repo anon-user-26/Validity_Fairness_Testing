@@ -332,7 +332,7 @@ def retrain_CuT(model_name, dataset_name, protected_name, validity, save_to="CuT
 
 
 # 妥当性のレベルを指定して，再学習を実行 
-models_retrained_path = f"{root_dir}/models_retrained/{model_name}/{dataset_name}/{protected_name}/{model_name}_{dataset_name}_{protected_name}.joblib"
+models_retrained_path = f"{root_dir}/models_retrained/{model_name}_{dataset_name}_{protected_name}.joblib"
 
 for validity in [i / 100 for i in range(0, 101, 5)]:
     retrain_CuT(model_name, dataset_name, protected_name, validity, models_retrained_path)
