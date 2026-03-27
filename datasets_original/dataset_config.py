@@ -1,4 +1,5 @@
-# modified by referring to RSUTT' config file
+# Dataset configuration for Adult, Bank, and Credit datasets
+
 Adult = {
     "age": {"range": [1, 9], "NaN":[], "type":  "categorical", "sensitive": True},
     "workclass": {"range": [0, 7], "NaN":["100"], "type":  "categorical", "sensitive": False},
@@ -77,85 +78,3 @@ Credit = {
     "foreign_worker": {"range": [1, 2], "NaN":[], "type":  "categorical", "sensitive": False},
     "Class": {"range": [1, 2], "NaN":[], "type":  "output", "sensitive": False}
 }
-
-
-# adult_dataset = [
-#     {"name": "age", "range": [0, 9], "NaN": [], "type": "numerical", "sensitive": True},
-#     {"name": "workclass", "range": [0, 7], "NaN": ["100"], "type": "categorical", "sensitive": False},
-#     {"name": "fnlwgt", "range": [0, 74], "NaN": [], "type": "numerical", "sensitive": False},
-#     {"name": "education", "range": [0, 15], "NaN": [], "type": "numerical", "sensitive": False},
-#     {"name": "marital_status", "range": [0, 6], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "occupation", "range": [0, 13], "NaN": ["100"], "type": "categorical", "sensitive": False},
-#     {"name": "relationship", "range": [0, 5], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "race", "range": [0, 4], "NaN": [], "type": "categorical", "sensitive": True},
-#     {"name": "gender", "range": [0, 1], "NaN": [], "type": "categorical", "sensitive": True},
-#     {"name": "capital_gain", "range": [0, 41], "NaN": [], "type": "numerical", "sensitive": False},
-#     {"name": "capital_loss", "range": [0, 43], "NaN": [], "type": "numerical", "sensitive": False},
-#     {"name": "hours_per_week", "range": [1, 99], "NaN": ["99"], "type": "numerical", "sensitive": False},
-#     {"name": "native_country", "range": [0, 41], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "Class", "range": [0, 1], "NaN": [], "type": "output", "sensitive": False},
-# ]
-#
-# bank_dataset = [
-#     # Age binned into numerical categories (e.g., 1=18-25)
-#     {"name": "age", "range": [1, 9], "NaN": [], "type": "numerical", "sensitive": True},
-#     # 12 job categories (0-11)
-#     {"name": "job", "range": [0, 11], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Marital status: 0=single, 1=married, 2=divorced, etc.
-#     {"name": "marital", "range": [0, 2], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Education: 4 categories (e.g., primary, secondary, tertiary, unknown)
-#     {"name": "education", "range": [0, 3], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Default on loan (0=no, 1=yes)
-#     {"name": "default", "range": [0, 1], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Bank balance (already binned or normalized)
-#     {"name": "balance", "range": [-20, 179], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Housing loan (0=no, 1=yes)
-#     {"name": "housing", "range": [0, 1], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Personal loan (0=no, 1=yes)
-#     {"name": "loan", "range": [0, 1], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Contact method (e.g., cellular, telephone, unknown)
-#     {"name": "contact", "range": [0, 2], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Last contact day of the month (1-31)
-#     {"name": "day", "range": [1, 31], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Month (0=Jan, ..., 11=Dec)
-#     {"name": "month", "range": [0, 11], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Duration of the last contact in seconds (99 may represent missing/compressed)
-#     {"name": "duration", "range": [0, 99], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Number of contacts performed during this campaign
-#     {"name": "campaign", "range": [1, 63], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Number of days since the client was last contacted in previous campaigns
-#     {"name": "pdays", "range": [0, 1], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Number of contacts performed before this campaign
-#     {"name": "previous", "range": [0, 1], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Outcome of the previous marketing campaign (0-3)
-#     {"name": "poutcome", "range": [0, 3], "NaN": [], "type": "numerical", "sensitive": False},
-#     # Final response (0=No, 1=Yes)
-#     {"name": "Class", "range": [0, 1], "NaN": [], "type": "output", "sensitive": False}
-# ]
-#
-#
-# credit_dataset = [
-#     {"name": "account_status", "range": [1, 4], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "duration_in_month", "range": [4, 72], "NaN": [], "type": "numerical", "sensitive": False},
-#     {"name": "credit_history", "range": [1, 5], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "purpose", "range": [1, 10], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "credit_amount", "range": [250, 18424], "NaN": [], "type": "numerical", "sensitive": False},
-#     {"name": "savings_status", "range": [1, 5], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "employment_since", "range": [1, 5], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "installment_commitment", "range": [1, 4], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "gender", "range": [0, 1], "NaN": [], "type": "categorical", "sensitive": True},
-#     # {"name": "personal_status", "range": [0, 4], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "other_parties", "range": [1, 3], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "residence_since", "range": [1, 4], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "property", "range": [1, 4], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "age", "range": [19, 75], "NaN": [], "type": "numerical", "sensitive": True},
-#     {"name": "other_installment_plans", "range": [1, 3], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "housing", "range": [1, 3], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "num_credits", "range": [1, 4], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "job", "range": [1, 4], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "num_dependent", "range": [1, 2], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "telephone", "range": [1, 2], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "foreign_worker", "range": [1, 2], "NaN": [], "type": "categorical", "sensitive": False},
-#     {"name": "Class", "range": [0, 1], "NaN": [], "type": "output", "sensitive": False}
-# ]
-
