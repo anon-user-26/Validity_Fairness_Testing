@@ -7,29 +7,18 @@ runtime = 3600
 root_dir = os.path.dirname(os.path.abspath(__file__))
 
 scenarios = [
-    #("SVM",       "Adult",  "age"),
-
-    #("SVM",       "Credit", "age"),
-    
-    #("SVM",       "Credit", "sex"),
-    
-    #("MLP",       "Adult",  "age"),
-    
+    ("SVM",       "Adult",  "age"),
+    ("SVM",       "Credit", "age"),
+    ("SVM",       "Credit", "sex"),
+    ("MLP",       "Adult",  "age"),
     ("MLP",       "Adult",  "race"),
-    
-    # ("MLP",       "Adult",  "sex"),
-    
-    # ("MLP",       "Bank",   "age"),
-    
-    #("MLP",       "Credit", "age"),
-    
-    #("MLP",       "Credit", "sex"),
-
-    #("RanForest", "Bank",   "age"),
-    
-    #("RanForest", "Credit", "age"),
-    
-    #("RanForest", "Credit", "sex"),
+    ("MLP",       "Adult",  "sex"),
+    ("MLP",       "Bank",   "age"),
+    ("MLP",       "Credit", "age"),
+    ("MLP",       "Credit", "sex")
+    ("RanForest", "Bank",   "age"),
+    ("RanForest", "Credit", "age"),
+    ("RanForest", "Credit", "sex"),
 ]
 
 for i in range(execution_times):

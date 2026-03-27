@@ -1,2 +1,0 @@
-validity average_pairwise_L0_distance average_pairwise_L1_distance average_pairwise_binned_L0_distance accuracy_trained IFr_trained valid_IFr_trained accuracy_retrained IFr_retrained valid_IFr_retrained
-0.0 11.196914579473901 4.1614605900167945 10.104145340167259 0.8099186242898818 0.097225 0.295725 0.8134500230308613 0.063675 0.174075
