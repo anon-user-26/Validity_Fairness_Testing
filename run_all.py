@@ -15,7 +15,7 @@ scenarios = [
     ("MLP",       "Adult",  "sex"),
     ("MLP",       "Bank",   "age"),
     ("MLP",       "Credit", "age"),
-    ("MLP",       "Credit", "sex")
+    ("MLP",       "Credit", "sex"),
     ("RanForest", "Bank",   "age"),
     ("RanForest", "Credit", "age"),
     ("RanForest", "Credit", "sex"),
