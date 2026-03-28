@@ -1,19 +1,25 @@
 from aft import AFT
-from FairnessTestMethods import Vbtx, Vbt, Themis
 from utils.BlackBoxModel import BlackBoxModel
-import multiprocessing
-from joblib import load
+
 import argparse
-import pandas as pd
-from datasets_original import dataset_config
+import multiprocessing
 import os
+import sys
+
+import pandas as pd
+from joblib import load
+
+# Add project root to path
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_dir)
+
+from datasets_original import dataset_config
 
 
 def exp(dataset_name, model_name, protected_pair, method, runtime, repeat, show_logging, res_logging=False, repeat_label=None, start_label=0):
     protected_name = protected_pair[0]
     protected_param = protected_pair[1]
     
-    root_dir = os.path.dirname(os.path.abspath(__file__))
     train_path = f"{root_dir}/datasets_prepared/train/{dataset_name}_train.csv"
     model_trained_path = f"{root_dir}/models_trained/{model_name}_{dataset_name}.joblib"
 
@@ -22,9 +28,6 @@ def exp(dataset_name, model_name, protected_pair, method, runtime, repeat, show_
     # This means we can only:
     # (1) Know the number of input attributes for the CuT and the range of values for each attribute.
     # (2) Given an input, use the CuT to predict its prediction outcome.
-    # The range of values for each attribute is obtained by analyzing the training data of the CuT in ./Datasets.
-    # data_range, df = BlackBoxModel.create_data_range_from_csv(f"./Datasets/{dataset_csv}.csv")
-    
     config = getattr(dataset_config, dataset_name)
     data_range = [v["range"] for k, v in config.items() if k != "Class"]
     df = pd.read_csv(train_path)
@@ -33,7 +36,7 @@ def exp(dataset_name, model_name, protected_pair, method, runtime, repeat, show_
     CuT = BlackBoxModel(data_range, MODEL_, feature_list=df.columns.tolist())
 
     # Perform IFT (individual fairness testing).
-    # Each IFT algorithm requires two inputs:
+    # The IFT algorithm requires two inputs:
     # (1) a CuT, and
     # (2) a protected attribute, including its name (protected_name) and its index (protected_param).
     for _ in range(start_label, start_label + repeat):
@@ -47,26 +50,8 @@ def exp(dataset_name, model_name, protected_pair, method, runtime, repeat, show_
                         max_train_data_each_path=10, max_sample_each_path=100, MaxDiscPathPair=100, MaxTry=10000,
                         dt_search_mode="random+flip", check_type="themis",
                         label=(f"{method}-{model_name}-{dataset_name}-{protected_name}-{runtime}", _))
-
-        elif method == "vbtx":
-            vbtx_ver = "improved"
-            tester = Vbtx(CuT, [protected_param], no_train_data_sample=5000,
-                          vbtx_ver=vbtx_ver, show_logging=show_logging)
-            tester.test(runtime=runtime, label=(f"{method}-{model_name}-{dataset_name}-{protected_name}-{runtime}", _))
-
-        elif method == "vbt":
-            vbtx_ver = "vbt"
-            tester = Vbt(CuT, [protected_param], no_train_data_sample=5000,
-                          vbtx_ver=vbtx_ver, show_logging=show_logging)
-            tester.test(runtime=runtime, label=(f"{method}-{model_name}-{dataset_name}-{protected_name}-{runtime}", _))
-
-        elif method == "themis":
-            tester = Themis(CuT, [protected_param], show_logging=show_logging)
-            tester.test(runtime=runtime, max_test=None, max_disc=None,
-                        label=(f"{method}-{model_name}-{dataset_name}-{protected_name}-{runtime}", _))
-
         else:
-            print(f"No method called {method}")
+            raise ValueError(f"Unsupported method: {method}")
 
         if res_logging:
             option_reports = ""
@@ -76,27 +61,26 @@ def exp(dataset_name, model_name, protected_pair, method, runtime, repeat, show_
 
 
 def para_exp_main(runtime, repeat, repeat_run_together=True):
-    check_models = ["LogReg", "RanForest", "DecTree", "MLP"]
-    dataset_names = ["Adult", "Credit", "Bank"]
-    method_list = ["aft", "vbtx", "vbt", "themis"]
+    check_models = ["SVM", "MLP", "RanForest"]
+    dataset_names = ["Adult", "Bank", "Credit"]
+    method = "aft"
     start_label = 0
     paras = list()
-    for method in method_list:
-        for dataset_name in dataset_names:
-            protected_list = list()
-            if dataset_name == "Adult":
-                protected_list = [("sex", 8), ("race", 7), ("age", 0)]
-            elif dataset_name == "Bank":
-                protected_list = [("age", 0)]
-            elif dataset_name == "Credit":
-                protected_list = [("sex", 8), ("age", 12)]
-            for protected_pair in protected_list:
-                for model_name in check_models:
-                    if repeat_run_together:
-                        paras.append((dataset_name, model_name, protected_pair, method, runtime, repeat, False, True, None, start_label))
-                    else:
-                        for _ in range(repeat):
-                            paras.append((dataset_name, model_name, protected_pair, method, runtime, 1, False, True, _, 0))
+    for dataset_name in dataset_names:
+        protected_list = list()
+        if dataset_name == "Adult":
+            protected_list = [("sex", 8), ("race", 7), ("age", 0)]
+        elif dataset_name == "Bank":
+            protected_list = [("age", 0)]
+        elif dataset_name == "Credit":
+            protected_list = [("sex", 8), ("age", 12)]
+        for protected_pair in protected_list:
+            for model_name in check_models:
+                if repeat_run_together:
+                    paras.append((dataset_name, model_name, protected_pair, method, runtime, repeat, False, True, None, start_label))
+                else:
+                    for _ in range(repeat):
+                        paras.append((dataset_name, model_name, protected_pair, method, runtime, 1, False, True, _, 0))
     pool = multiprocessing.Pool(processes=12)
     pool.starmap(exp, paras)
     pool.close()
@@ -154,9 +138,9 @@ if __name__ == "__main__":
                         help="Runtime in seconds (default: 3600)")
     parser.add_argument("--repeat", type=int, default=30,
                         help="Number of repetitions (default: 30)")
-    parser.add_argument("--method", choices=["aft", "vbtx", "vbt", "themis"],
+    parser.add_argument("--method", choices=["aft"],
                         default="aft", help="Method to be used (default: aft)")
-    parser.add_argument("--model_name", choices=["LogReg", "RanForest", "DecTree", "MLP", "SVM"],
+    parser.add_argument("--model_name", choices=["SVM", "MLP", "RanForest"],
                         default="MLP", help="Model name (default: MLP)")
     parser.add_argument("--disable_log", action="store_false", dest="enable_log",
                         help="Disable logging (default: enable)")

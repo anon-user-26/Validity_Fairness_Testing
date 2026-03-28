@@ -1,17 +1,34 @@
-import random
-import time
-from sklearn.tree import DecisionTreeClassifier
+import ast
+import copy
 import csv
-from utils.PathSearcher import PathSearcher, IntervalPool
-import logging
 import itertools
-from datasets_original import dataset_config
+import logging
+import os
+import random
+import sys
+import time
 from itertools import combinations
+
 import numpy as np
-import copy, os, ast
-import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
+
+from utils.PathSearcher import PathSearcher, IntervalPool
+
+# Add project root to path
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_dir)
+
+from datasets_original import dataset_config
+
+
+# Add project root to path
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_dir)
+
+
 
 def load_train_size(dataset_name):
+    """Return the number of training instances excluding the header row."""
     filename = f"datasets_prepared/train/{dataset_name}_train.csv"
     with open(filename, "r") as f:
         return sum(1 for _ in f) - 1
@@ -23,13 +40,13 @@ class AFT:
         self.disc_data = list()
         self.test_data = list()
         self.protected_list = [self.black_box_model.feature_list[i] for i in protected_list] # ["age"]
-        self.protected_list_no = protected_list # [0] (age index)
+        self.protected_list_no = protected_list
         self.no_train_data_sample = no_train_data_sample
         self.no_test = 0
         self.no_disc = 0
         self.real_time_consumed = 0
         self.cpu_time_consumed = 0
-        self.protected_value_comb = self.generate_protected_value_combination() # [(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,), (9,)]
+        self.protected_value_comb = self.generate_protected_value_combination()
         self.no_prot = len(protected_list)
         if show_logging:
             logging.basicConfig(format="", level=logging.INFO)
@@ -129,7 +146,6 @@ class AFT:
         binned_ds_summary = bin_dataset_summary(ds_summary)
 
         # occur_tableを読み込む
-        root_dir = os.path.dirname(os.path.abspath(__file__))
         occur_table_path = f"{root_dir}/datasets_prepared/occ_table/{dataset_name}_occ_table.csv"
         occur_table = []
         with open(occur_table_path, "r", encoding="utf-8") as f:
@@ -230,7 +246,6 @@ class AFT:
         #     csvwriter = csv.writer(csvfile)
         #     csvwriter.writerows(self.test_data)
         # logging.info(f"Saving the detected discriminatory instances to DiscData/raw/{label[0]}-{label[1]}.csv")
-        root_dir = os.path.dirname(os.path.abspath(__file__))
         raw_IDIs_path = f"{root_dir}/IDIs/raw/{label[0]}.csv"
         logging.info(f"Saving the detected discriminatory instances to IDIs/raw/{label[0]}.csv")
         with open(raw_IDIs_path, 'w', newline='') as csvfile:
