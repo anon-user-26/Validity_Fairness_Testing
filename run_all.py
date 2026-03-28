@@ -37,7 +37,7 @@ for i in range(execution_times):
         subprocess.call(f"python {make_test_valid_IFr_path} {dataset_name} {protected_name}", shell=True)
         
         train_path = f"{root_dir}/models_trained/train.py"
-        subprocess.call(f"python {train_path} {model_name} {dataset_name} {protected_name}", shell=True)
+        subprocess.call(f"python {train_path} {model_name} {dataset_name}", shell=True)
         
         exp_path = f"{root_dir}/exp.py"
         subprocess.call(f"python {exp_path} --dataset_name {dataset_name} --protected_attr {protected_name} --model_name {model_name} --method aft --runtime {runtime} --repeat 1", shell=True)
