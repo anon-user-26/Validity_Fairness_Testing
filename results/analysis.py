@@ -1,222 +1,288 @@
-import os
-import glob
-import sys
+from pathlib import Path
+
 import numpy as np
 from scipy.stats import t
 
 
 def partial_corr_with_p(x, y, z):
-    """Compute partial correlation r_xy·z and its p-value."""
+    """Return the partial correlation r(x, y | z) and its p-value."""
     r_xy = np.corrcoef(x, y)[0, 1]
     r_xz = np.corrcoef(x, z)[0, 1]
     r_yz = np.corrcoef(y, z)[0, 1]
 
     numerator = r_xy - r_xz * r_yz
-    denominator = ((1 - r_xz**2) * (1 - r_yz**2)) ** 0.5
+    denominator = np.sqrt((1 - r_xz**2) * (1 - r_yz**2))
 
     if denominator == 0:
         return float("nan"), float("nan")
 
-    r = numerator / denominator
+    r_value = numerator / denominator
 
     n = len(x)
     df = n - 3
     if df <= 0:
-        return r, float("nan")
+        return r_value, float("nan")
 
-    t_value = r * np.sqrt(df / (1 - r**2))
+    t_value = r_value * np.sqrt(df / (1 - r_value**2))
     p_value = 2 * (1 - t.cdf(abs(t_value), df))
+    return r_value, p_value
 
-    return r, p_value
 
-
-def multivariate_regression(x, y, z):
-    """Compute z = alpha*x + beta*y + gamma and return coefficients and R^2."""
-    X = np.column_stack([x, y, np.ones(len(x))])
-    coef, _, _, _ = np.linalg.lstsq(X, z, rcond=None)
+def multivariate_regression(validity, distance, target):
+    """Fit target = alpha * validity + beta * distance + gamma."""
+    design_matrix = np.column_stack([validity, distance, np.ones(len(validity))])
+    coef, _, _, _ = np.linalg.lstsq(design_matrix, target, rcond=None)
     alpha, beta, gamma = coef
-    z_pred = X @ coef
 
-    ss_res = np.sum((z - z_pred)**2)
-    ss_tot = np.sum((z - np.mean(z))**2)
-    r2 = 1 - ss_res / ss_tot if ss_tot != 0 else float("nan")
+    predicted = design_matrix @ coef
+    ss_res = np.sum((target - predicted) ** 2)
+    ss_tot = np.sum((target - np.mean(target)) ** 2)
+    r_squared = 1 - ss_res / ss_tot if ss_tot != 0 else float("nan")
 
-    return alpha, beta, gamma, r2
+    return alpha, beta, gamma, r_squared
 
 
-def analysis(model_name, dataset_name, protected_name):
-    base_dir = f"./{model_name}/{dataset_name}/{protected_name}"
-    pattern = os.path.join(base_dir, f"{model_name}_{dataset_name}_{protected_name}_*_average.txt")
-    all_files = glob.glob(pattern)
+def simple_corr_with_p(x, y):
+    """Return the Pearson correlation coefficient and its p-value."""
+    r_value = np.corrcoef(x, y)[0, 1]
 
-    valid_files = []
-    for path in all_files:
-        parts = os.path.basename(path).split("_")
-        validity_str = parts[-2]
-        try:
-            float(validity_str)
-            valid_files.append(path)
-        except ValueError:
-            pass
+    n = len(x)
+    df = n - 2
+    if df <= 0:
+        return r_value, float("nan")
 
-    valid_files = sorted(valid_files, key=lambda p: float(os.path.basename(p).split("_")[-2]))
+    t_value = r_value * np.sqrt(df / (1 - r_value**2))
+    p_value = 2 * (1 - t.cdf(abs(t_value), df))
+    return r_value, p_value
 
-    if len(valid_files) == 0:
-        print("No valid average files found.")
-        return
 
-    validity_list = []
-    L0_list = []
-    L1_list = []
-    bL0_list = []
-    acc_imp_list = []
-    ifr_imp_list = []
-    valid_ifr_imp_list = []
+def parse_average_file(file_path):
+    """Extract the mean value of each metric from an *_average.txt file."""
+    metrics = {}
 
-    output_lines = []
-
-    for path in valid_files:
-        with open(path, "r") as f:
-            lines = f.readlines()
-
-        mid = {}
-        for line in lines:
+    with file_path.open("r", encoding="utf-8") as f:
+        for line in f:
             if ":" not in line:
                 continue
-            key, vals = line.strip().split(":", 1)
-            numbers = vals.strip().split()
+
+            key, values = line.strip().split(":", 1)
+            numbers = values.strip().split()
+
             if len(numbers) < 3:
                 continue
-            mid[key] = float(numbers[1])
 
-        v = mid["validity"]
-        L0 = mid["average_pairwise_L0_distance"]
-        L1 = mid["average_pairwise_L1_distance"]
-        bL0 = mid["average_pairwise_binned_L0_distance"]
+            metrics[key] = float(numbers[1])
 
-        acc_tr = mid["accuracy_trained"]
-        acc_re = mid["accuracy_retrained"]
-        ifr_tr = mid["IFr_trained"]
-        ifr_re = mid["IFr_retrained"]
-        v_ifr_tr = mid["valid_IFr_trained"]
-        v_ifr_re = mid["valid_IFr_retrained"]
+    return metrics
 
-        acc_imp = 100 * (acc_re - acc_tr) / acc_tr
-        ifr_imp = 100 * (ifr_tr - ifr_re) / ifr_tr
-        valid_ifr_imp = 100 * (v_ifr_tr - v_ifr_re) / v_ifr_tr
 
-        validity_list.append(v)
-        L0_list.append(L0)
-        L1_list.append(L1)
-        bL0_list.append(bL0)
-        acc_imp_list.append(acc_imp)
-        ifr_imp_list.append(ifr_imp)
-        valid_ifr_imp_list.append(valid_ifr_imp)
+def collect_average_files(base_dir, model_name, dataset_name, protected_name):
+    """Collect valid average-result files sorted by validity."""
+    pattern = f"{model_name}_{dataset_name}_{protected_name}_*_average.txt"
+    average_files = []
 
-        output_lines.append(
-            f"{v} {L0} {L1} {bL0} "
-            f"{acc_tr} {ifr_tr} {v_ifr_tr} "
-            f"{acc_re} {ifr_re} {v_ifr_re} "
-            f"{acc_imp} {ifr_imp} {valid_ifr_imp}"
+    for file_path in base_dir.glob(pattern):
+        parts = file_path.stem.split("_")
+
+        if len(parts) < 5:
+            continue
+
+        validity_str = parts[-2]
+
+        try:
+            float(validity_str)
+        except ValueError:
+            continue
+
+        average_files.append(file_path)
+
+    average_files.sort(key=lambda path: float(path.stem.split("_")[-2]))
+    return average_files
+
+
+def analyze_directory(model_name, dataset_name, protected_name):
+    """Generate one analysis file for a single model/dataset/protected combination."""
+    base_dir = Path(model_name) / dataset_name / protected_name
+
+    average_files = collect_average_files(
+        base_dir, model_name, dataset_name, protected_name
+    )
+
+    if not average_files:
+        print(f"No valid average files found in: {base_dir}")
+        return
+
+    validity_values = []
+    l0_values = []
+    l1_values = []
+    bl0_values = []
+    acc_improvement_values = []
+    ifr_improvement_values = []
+    valid_ifr_improvement_values = []
+    output_rows = []
+
+    for file_path in average_files:
+        metrics = parse_average_file(file_path)
+
+        validity = metrics["validity"]
+        l0 = metrics["average_pairwise_L0_distance"]
+        l1 = metrics["average_pairwise_L1_distance"]
+        bl0 = metrics["average_pairwise_binned_L0_distance"]
+
+        acc_trained = metrics["accuracy_trained"]
+        ifr_trained = metrics["IFr_trained"]
+        valid_ifr_trained = metrics["valid_IFr_trained"]
+
+        acc_retrained = metrics["accuracy_retrained"]
+        ifr_retrained = metrics["IFr_retrained"]
+        valid_ifr_retrained = metrics["valid_IFr_retrained"]
+
+        acc_improvement = 100 * (acc_retrained - acc_trained) / acc_trained
+        ifr_improvement = 100 * (ifr_trained - ifr_retrained) / ifr_trained
+        valid_ifr_improvement = (
+            100 * (valid_ifr_trained - valid_ifr_retrained) / valid_ifr_trained
         )
-        
-    v_arr = np.array(validity_list)
-    L0_arr = np.array(L0_list)
-    L1_arr = np.array(L1_list)
-    bL0_arr = np.array(bL0_list)
-    acc_arr = np.array(acc_imp_list)
-    ifr_arr = np.array(ifr_imp_list)
-    vifr_arr = np.array(valid_ifr_imp_list)
-    
-    # ----- SIMPLE CORRELATIONS (validity vs diversity) -----
-    def simple_corr(x, y):
-        r = np.corrcoef(x, y)[0, 1]
-        n = len(x)
-        df = n - 2
-        if df > 0:
-            t_value = r * np.sqrt(df / (1 - r**2))
-            p = 2 * (1 - t.cdf(abs(t_value), df))
-        else:
-            p = float("nan")
-        return r, p
 
-    r_L0, p_L0 = simple_corr(v_arr, L0_arr)
-    r_L1, p_L1 = simple_corr(v_arr, L1_arr)
-    r_bL0, p_bL0 = simple_corr(v_arr, bL0_arr)
+        validity_values.append(validity)
+        l0_values.append(l0)
+        l1_values.append(l1)
+        bl0_values.append(bl0)
+        acc_improvement_values.append(acc_improvement)
+        ifr_improvement_values.append(ifr_improvement)
+        valid_ifr_improvement_values.append(valid_ifr_improvement)
 
-    # ----- PARTIAL CORR -----
-    def pc(z_arr, control_arr):
-        return partial_corr_with_p(v_arr, z_arr, control_arr)
+        output_rows.append(
+            f"{validity} {l0} {l1} {bl0} "
+            f"{acc_trained} {ifr_trained} {valid_ifr_trained} "
+            f"{acc_retrained} {ifr_retrained} {valid_ifr_retrained} "
+            f"{acc_improvement} {ifr_improvement} {valid_ifr_improvement}"
+        )
 
-    pc_results = {
+    validity_arr = np.array(validity_values)
+    l0_arr = np.array(l0_values)
+    l1_arr = np.array(l1_values)
+    bl0_arr = np.array(bl0_values)
+    acc_arr = np.array(acc_improvement_values)
+    ifr_arr = np.array(ifr_improvement_values)
+    valid_ifr_arr = np.array(valid_ifr_improvement_values)
+
+    corr_l0, p_l0 = simple_corr_with_p(validity_arr, l0_arr)
+    corr_l1, p_l1 = simple_corr_with_p(validity_arr, l1_arr)
+    corr_bl0, p_bl0 = simple_corr_with_p(validity_arr, bl0_arr)
+
+    partial_corr_results = {
         "acc_imp": {
-            "L0": pc(acc_arr, L0_arr),
-            "L1": pc(acc_arr, L1_arr),
-            "bL0": pc(acc_arr, bL0_arr),
+            "L0": partial_corr_with_p(validity_arr, acc_arr, l0_arr),
+            "L1": partial_corr_with_p(validity_arr, acc_arr, l1_arr),
+            "bL0": partial_corr_with_p(validity_arr, acc_arr, bl0_arr),
         },
         "IFr_imp": {
-            "L0": pc(ifr_arr, L0_arr),
-            "L1": pc(ifr_arr, L1_arr),
-            "bL0": pc(ifr_arr, bL0_arr),
+            "L0": partial_corr_with_p(validity_arr, ifr_arr, l0_arr),
+            "L1": partial_corr_with_p(validity_arr, ifr_arr, l1_arr),
+            "bL0": partial_corr_with_p(validity_arr, ifr_arr, bl0_arr),
         },
         "valid_IFr_imp": {
-            "L0": pc(vifr_arr, L0_arr),
-            "L1": pc(vifr_arr, L1_arr),
-            "bL0": pc(vifr_arr, bL0_arr),
+            "L0": partial_corr_with_p(validity_arr, valid_ifr_arr, l0_arr),
+            "L1": partial_corr_with_p(validity_arr, valid_ifr_arr, l1_arr),
+            "bL0": partial_corr_with_p(validity_arr, valid_ifr_arr, bl0_arr),
         },
     }
 
-    # ----- MULTIPLE REGRESSION -----
-    def reg(y):
-        
-        return {
-            "L0": multivariate_regression(v_arr, L0_arr, y),
-            
-            "L1": multivariate_regression(v_arr, L1_arr, y),
-            "bL0": multivariate_regression(v_arr, bL0_arr, y),
-        }
-
-    reg_results = {
-        "acc_imp": reg(acc_arr),
-        "IFr_imp": reg(ifr_arr),
-        "valid_IFr_imp": reg(vifr_arr),
+    regression_results = {
+        "acc_imp": {
+            "L0": multivariate_regression(validity_arr, l0_arr, acc_arr),
+            "L1": multivariate_regression(validity_arr, l1_arr, acc_arr),
+            "bL0": multivariate_regression(validity_arr, bl0_arr, acc_arr),
+        },
+        "IFr_imp": {
+            "L0": multivariate_regression(validity_arr, l0_arr, ifr_arr),
+            "L1": multivariate_regression(validity_arr, l1_arr, ifr_arr),
+            "bL0": multivariate_regression(validity_arr, bl0_arr, ifr_arr),
+        },
+        "valid_IFr_imp": {
+            "L0": multivariate_regression(validity_arr, l0_arr, valid_ifr_arr),
+            "L1": multivariate_regression(validity_arr, l1_arr, valid_ifr_arr),
+            "bL0": multivariate_regression(validity_arr, bl0_arr, valid_ifr_arr),
+        },
     }
 
-    # ----- OUTPUT -----
-    output_path = os.path.join(base_dir, f"{model_name}_{dataset_name}_{protected_name}_analysis.txt")
+    output_path = base_dir / f"{model_name}_{dataset_name}_{protected_name}_analysis.txt"
 
-    with open(output_path, "w") as out:
-        
+    with output_path.open("w", encoding="utf-8") as out:
         out.write("=== Correlation (validity vs distances) ===\n")
         out.write(
-            f"r(validity, L0) = {r_L0}, p = {p_L0}\n"
-            f"r(validity, L1) = {r_L1}, p = {p_L1}\n"
-            f"r(validity, bL0) = {r_bL0}, p = {p_bL0}\n\n"
+            f"r(validity, L0) = {corr_l0}, p = {p_l0}\n"
+            f"r(validity, L1) = {corr_l1}, p = {p_l1}\n"
+            f"r(validity, bL0) = {corr_bl0}, p = {p_bl0}\n\n"
         )
-        
+
         out.write("=== Partial Correlations (with p-values) ===\n")
-        for metric in pc_results:
-            out.write(f"\n[{metric}]\n")
-            for ctrl in ["L0", "L1", "bL0"]:
-                r, p = pc_results[metric][ctrl]
-                out.write(f"  r(validity, {metric} | {ctrl}) = {r}, p = {p}\n")
+        for metric_name, controls in partial_corr_results.items():
+            out.write(f"\n[{metric_name}]\n")
+            for control_name in ["L0", "L1", "bL0"]:
+                r_value, p_value = controls[control_name]
+                out.write(
+                    f"  r(validity, {metric_name} | {control_name}) = "
+                    f"{r_value}, p = {p_value}\n"
+                )
 
-        out.write("\n\n=== Multiple Regression (z = alpha*validity + beta*distance + gamma) ===\n")
-        for metric in reg_results:
-            out.write(f"\n[{metric}]\n")
-            for ctrl in ["L0", "L1", "bL0"]:
-                alpha, beta, gamma, r2 = reg_results[metric][ctrl]
-                out.write(f"  distance={ctrl}: alpha={alpha}, beta={beta}, gamma={gamma}, R2={r2}\n")
+        out.write(
+            "\n\n=== Multiple Regression "
+            "(target = alpha * validity + beta * distance + gamma) ===\n"
+        )
+        for metric_name, controls in regression_results.items():
+            out.write(f"\n[{metric_name}]\n")
+            for control_name in ["L0", "L1", "bL0"]:
+                alpha, beta, gamma, r_squared = controls[control_name]
+                out.write(
+                    f"  distance={control_name}: "
+                    f"alpha={alpha}, beta={beta}, gamma={gamma}, R2={r_squared}\n"
+                )
 
-        out.write("\n\nvalidity L0 L1 binned_L0 "
-              "acc_trained IFr_trained valid_IFr_trained "
-              "acc_retrained IFr_retrained valid_IFr_retrained "
-              "acc_imp IFr_imp valid_IFr_imp\n")
-        for line in output_lines:
-            out.write(line + "\n")
+        out.write(
+            "\n\nvalidity L0 L1 binned_L0 "
+            "acc_trained IFr_trained valid_IFr_trained "
+            "acc_retrained IFr_retrained valid_IFr_retrained "
+            "acc_imp IFr_imp valid_IFr_imp\n"
+        )
+        for row in output_rows:
+            out.write(row + "\n")
 
     print(f"Saved analysis to: {output_path}")
 
 
+def run_all_analyses():
+    """Run analysis for every ./model/dataset/protected directory."""
+    root_dir = Path(".")
+
+    for model_dir in root_dir.iterdir():
+        if not model_dir.is_dir():
+            continue
+
+        for dataset_dir in model_dir.iterdir():
+            if not dataset_dir.is_dir():
+                continue
+
+            for protected_dir in dataset_dir.iterdir():
+                if not protected_dir.is_dir():
+                    continue
+
+                model_name = model_dir.name
+                dataset_name = dataset_dir.name
+                protected_name = protected_dir.name
+
+                print(
+                    f"Running analysis for "
+                    f"{model_name}/{dataset_name}/{protected_name}"
+                )
+
+                try:
+                    analyze_directory(model_name, dataset_name, protected_name)
+                except Exception as exc:
+                    print(
+                        f"Error in {model_name}/{dataset_name}/{protected_name}: {exc}"
+                    )
+
+
 if __name__ == "__main__":
-    analysis(sys.argv[1], sys.argv[2], sys.argv[3])
+    run_all_analyses()

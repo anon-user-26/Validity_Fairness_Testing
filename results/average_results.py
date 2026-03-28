@@ -1,94 +1,128 @@
-import sys, os
+from pathlib import Path
+
 import numpy as np
 
-def average(model_name, dataset_name, protected_name, validiy):
 
-    validity_list = []
-    average_pairwise_L0_distance_list = []
-    average_pairwise_L1_distance_list = []
-    average_pairwise_binned_L0_distance_list = []
-    accuracy_trained_list = []
-    IFr_trained_list = []
-    valid_IFr_trained_list = []
-    accuracy_retrained_list = []
-    IFr_retrained_list = []
-    valid_IFr_retrained_list = []
+METRIC_NAMES = [
+    "validity",
+    "average_pairwise_L0_distance",
+    "average_pairwise_L1_distance",
+    "average_pairwise_binned_L0_distance",
+    "accuracy_trained",
+    "IFr_trained",
+    "valid_IFr_trained",
+    "accuracy_retrained",
+    "IFr_retrained",
+    "valid_IFr_retrained",
+]
 
-    result_path = f"{model_name}/{dataset_name}/{protected_name}/{model_name}_{dataset_name}_{protected_name}_{validiy}.txt"
-    with open(result_path) as f:
-        lines = f.readlines()[1:]  # Skip header line
-        for line in lines:
-            validity,average_pairwise_L0_distance,average_pairwise_L1_distance,average_pairwise_binned_L0_distance,accuracy_trained,IFr_trained,valid_IFr_trained,accuracy_retrained,IFr_retrained,valid_IFr_retrained = line.split()
-            
-            validity_list.append(float(validity))
-            average_pairwise_L0_distance_list.append(float(average_pairwise_L0_distance))
-            average_pairwise_L1_distance_list.append(float(average_pairwise_L1_distance))
-            average_pairwise_binned_L0_distance_list.append(float(average_pairwise_binned_L0_distance))
-            accuracy_trained_list.append(float(accuracy_trained))
-            IFr_trained_list.append(float(IFr_trained))
-            valid_IFr_trained_list.append(float(valid_IFr_trained))
-            accuracy_retrained_list.append(float(accuracy_retrained))
-            IFr_retrained_list.append(float(IFr_retrained))
-            valid_IFr_retrained_list.append(float(valid_IFr_retrained))
 
-    
-    mean = np.mean(validity_list)
-    std = np.std(validity_list)
-    lower, upper = mean - 1.96 * std, mean + 1.96 * std
-    a = f"validity: {lower} {mean} {upper}"
-    
-    mean = np.mean(average_pairwise_L0_distance_list)
-    std = np.std(average_pairwise_L0_distance_list)
-    lower, upper = mean - 1.96 * std, mean + 1.96 * std
-    b = f"average_pairwise_L0_distance: {lower} {mean} {upper}"
-    
-    mean = np.mean(average_pairwise_L1_distance_list)
-    std = np.std(average_pairwise_L1_distance_list)
-    lower, upper = mean - 1.96 * std, mean + 1.96 * std
-    c = f"average_pairwise_L1_distance: {lower} {mean} {upper}"
-    
-    mean = np.mean(average_pairwise_binned_L0_distance_list)
-    std = np.std(average_pairwise_binned_L0_distance_list)
-    lower, upper = mean - 1.96 * std, mean + 1.96 * std
-    d = f"average_pairwise_binned_L0_distance: {lower} {mean} {upper}"
-    
-    mean = np.mean(accuracy_trained_list)
-    std = np.std(accuracy_trained_list)
-    lower, upper = mean - 1.96 * std, mean + 1.96 * std
-    e = f"accuracy_trained: {lower} {mean} {upper}"
-    
-    mean = np.mean(IFr_trained_list)
-    std = np.std(IFr_trained_list)
-    lower, upper = mean - 1.96 * std, mean + 1.96 * std
-    f = f"IFr_trained: {lower} {mean} {upper}"
-    
-    mean = np.mean(valid_IFr_trained_list)
-    std = np.std(valid_IFr_trained_list)
-    lower, upper = mean - 1.96 * std, mean + 1.96 * std
-    g = f"valid_IFr_trained: {lower} {mean} {upper}"
-    
-    mean = np.mean(accuracy_retrained_list)
-    std = np.std(accuracy_retrained_list)
-    lower, upper = mean - 1.96 * std, mean + 1.96 * std
-    h = f"accuracy_retrained: {lower} {mean} {upper}"
-    
-    mean = np.mean(IFr_retrained_list)
-    std = np.std(IFr_retrained_list)
-    lower, upper = mean - 1.96 * std, mean + 1.96 * std
-    i = f"IFr_retrained: {lower} {mean} {upper}"
-    
-    mean = np.mean(valid_IFr_retrained_list)
-    std = np.std(valid_IFr_retrained_list)
-    lower, upper = mean - 1.96 * std, mean + 1.96 * std
-    j = f"valid_IFr_retrained: {lower} {mean} {upper}"
-    
-    with open(f"{model_name}/{dataset_name}/{protected_name}/{model_name}_{dataset_name}_{protected_name}_{validiy}_average.txt", "w") as myfile:
-        myfile.write(a + "\n" + b + "\n" + c + "\n" + d + "\n" + e + "\n" + f + "\n" + g + "\n" + h + "\n" + i + "\n" + j + "\n")
-                        
-if __name__ == '__main__':
-    file = sys.argv[1]                      # SVM_Credit_age_0.05.txt
-    filename = os.path.splitext(file)[0]    # SVM_Credit_age_0.05
+def compute_interval(values):
+    """Return mean and mean ± 1.96 * std."""
+    mean = np.mean(values)
+    std = np.std(values)
+    n = len(values)
+    lower = mean - 1.96 * std / np.sqrt(n)
+    upper = mean + 1.96 * std / np.sqrt(n)
+    return lower, mean, upper
 
-    model_name, dataset_name, protected_name, validity = filename.split("_")
 
-    average(model_name, dataset_name, protected_name, validity)
+def parse_result_file(file_path):
+    """Read a result file and collect values for each metric."""
+    metric_values = {name: [] for name in METRIC_NAMES}
+
+    with file_path.open("r", encoding="utf-8") as f:
+        lines = f.readlines()[1:]  # Skip the header line.
+
+    for line in lines:
+        parts = line.split()
+        if len(parts) != len(METRIC_NAMES):
+            continue
+
+        for metric_name, value in zip(METRIC_NAMES, parts):
+            metric_values[metric_name].append(float(value))
+
+    return metric_values
+
+
+def write_average_file(output_path, metric_values):
+    """Write summary statistics for each metric."""
+    lines = []
+
+    for metric_name in METRIC_NAMES:
+        values = metric_values[metric_name]
+        if not values:
+            continue
+
+        lower, mean, upper = compute_interval(values)
+        lines.append(f"{metric_name}: {lower} {mean} {upper}")
+
+    with output_path.open("w", encoding="utf-8") as f:
+        f.write("\n".join(lines) + "\n")
+
+
+def is_target_result_file(file_path):
+    """
+    Check whether the file name follows:
+    <model>_<dataset>_<protected>_<validity>.txt
+    """
+    if file_path.suffix != ".txt":
+        return False
+
+    if file_path.stem.endswith("_average"):
+        return False
+
+    parts = file_path.stem.split("_")
+    if len(parts) != 4:
+        return False
+
+    try:
+        float(parts[3])
+    except ValueError:
+        return False
+
+    return True
+
+
+def build_expected_path(model_name, dataset_name, protected_name, validity):
+    """Return the canonical path expected by the project structure."""
+    return (
+        Path(model_name)
+        / dataset_name
+        / protected_name
+        / f"{model_name}_{dataset_name}_{protected_name}_{validity}.txt"
+    )
+
+
+def process_file(file_path):
+    """Generate an average file for one result file."""
+    parts = file_path.stem.split("_")
+    model_name, dataset_name, protected_name, validity = parts
+
+    expected_path = build_expected_path(
+        model_name, dataset_name, protected_name, validity
+    )
+
+    # Skip files that do not match the expected directory structure.
+    if file_path != expected_path:
+        return
+
+    metric_values = parse_result_file(file_path)
+
+    output_path = file_path.with_name(
+        f"{model_name}_{dataset_name}_{protected_name}_{validity}_average.txt"
+    )
+    write_average_file(output_path, metric_values)
+
+    print(f"Created: {output_path}")
+
+
+def main():
+    """Search result files recursively and generate average files."""
+    for file_path in Path(".").rglob("*.txt"):
+        if is_target_result_file(file_path):
+            process_file(file_path)
+
+
+if __name__ == "__main__":
+    main()
