@@ -21,7 +21,7 @@ r(validity, bL0) = -0.9379147350075064, p = 3.507278911740741e-10
   r(validity, valid_IFr_imp | bL0) = -0.40854403320342964, p = 0.0737108453522557
 
 
-=== Multiple Regression (z = alpha*validity + beta*distance + gamma) ===
+=== Multiple Regression (target = alpha * validity + beta * distance + gamma) ===
 
 [acc_imp]
   distance=L0: alpha=1.7554992700645942, beta=1.3940183441029819, gamma=-20.246079794167073, R2=0.23447203239719105
