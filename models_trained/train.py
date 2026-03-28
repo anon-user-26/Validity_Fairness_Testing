@@ -22,7 +22,7 @@ def train_CuT(dataset_name, model_name, save_to="CuT.joblib"):
     # Initialize and train the selected model
     if model_name == "SVM":
         CuT = LinearSVC(penalty="l2", dual="auto")
-    elif model_name == "MLPC":
+    elif model_name == "MLP":
         CuT = MLPClassifier(
             hidden_layer_sizes=(64, 32, 16, 8, 4, 2),
             activation="relu",
@@ -36,7 +36,7 @@ def train_CuT(dataset_name, model_name, save_to="CuT.joblib"):
     else:
         raise ValueError(
             f"Unsupported model_name: {model_name}. "
-            f"Expected one of: 'SVM', 'MLPC', 'RanForest'."
+            f"Expected one of: 'SVM', 'MLP', 'RanForest'."
         )
 
     CuT.fit(X, y)
