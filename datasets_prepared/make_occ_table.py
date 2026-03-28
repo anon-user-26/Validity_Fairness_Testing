@@ -3,10 +3,11 @@
 import sys, copy, os
 import numpy as np
 from itertools import product, combinations
-import dataset_config # dataset_config (二つある)
 from itertools import combinations
 import pandas as pd
-
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_dir)
+from datasets_original import dataset_config
 
 def init_occurrence_table(binned_dataset_summary, STRENGTH_T):
     occurrence_table = []

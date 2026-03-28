@@ -1,7 +1,8 @@
 import os, sys, csv
 import random
-
-import dataset_config
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_dir)
+from datasets_original import dataset_config
 
 dataset_name = sys.argv[1]   # "Adult" or "Bank" or "Credit"
 protected_attr = sys.argv[2]  # "age" or "race" or "sex"

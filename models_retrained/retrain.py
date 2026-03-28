@@ -16,7 +16,9 @@ from sklearn.ensemble import GradientBoostingClassifier
 from sklearn.svm import LinearSVC
 from sklearn.svm import SVC
 
-import dataset_config
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(root_dir)
+from datasets_original import dataset_config
 
 # 準備
 
