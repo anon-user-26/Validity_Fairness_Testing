@@ -47,8 +47,10 @@ def build_test_IFr_set(samples, num_trials):
 samples = 100
 num_trials = 400
 
+# Generate test set for IFr calculation
 test_IFr_set = build_test_IFr_set(samples, num_trials)
 
+# Save result
 current_dir = os.path.dirname(os.path.abspath(__file__))
 test_IFr_path = f"{current_dir}/test_IFr/{dataset_name}_{protected_attr}_test_IFr_set.csv"
 
