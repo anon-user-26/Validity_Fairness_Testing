@@ -1,17 +1,30 @@
-import sys, os
+import sys
+import os
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
+
+# Argument
 dataset_name = sys.argv[1]
 
-
+# Path configuration
 root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-dataset_original_path = f"{root_dir}/datasets_original"
+input_path = os.path.join(root_dir, "datasets_original", f"{dataset_name}.csv")
 
-df = pd.read_csv(f"{dataset_original_path}/{dataset_name}.csv")
+train_output_path = os.path.join(root_dir, "datasets_prepared", "train", f"{dataset_name}_train.csv")
+test_output_path = os.path.join(root_dir, "datasets_prepared", "test_accuracy", f"{dataset_name}_test.csv")
 
-train_df, test_df = train_test_split(df, test_size=0.2, shuffle=True)
+# Load dataset
+df = pd.read_csv(input_path)
 
-# train data, test dataをcsvファイルとして保存
-train_df.to_csv(f"{root_dir}/datasets_prepared/train/{dataset_name}_train.csv", index=False)
-test_df.to_csv(f"{root_dir}/datasets_prepared/test_accuracy/{dataset_name}_test.csv", index=False)
+# Train-test split
+train_df, test_df = train_test_split(
+    df,
+    test_size=0.2,
+    shuffle=True,
+)
+
+# Save outputs
+train_df.to_csv(train_output_path, index=False)
+test_df.to_csv(test_output_path, index=False)
