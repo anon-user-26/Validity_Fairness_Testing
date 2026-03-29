@@ -298,8 +298,6 @@ def retrain_CuT(model_name, dataset_name, protected_name, validity, save_to="CuT
     if save_to is not None:
         dump(CuT, save_to)
     
-    
-    # 評価, 用いた再学習用データ（追加分，ラベルなし，片側だけ）の多様性を測定
     # Measure the diversity of the added instances using one representative per pair.
     added_single_instances = [pair[0][:-1] for pair in added_pairs]
     average_pairwise_L0_distance = average_pairwise_distance(added_single_instances, L0_distance)
