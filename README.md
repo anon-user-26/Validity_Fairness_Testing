@@ -173,7 +173,7 @@ For each selected scenario (model, dataset, protected attribute), the following 
 6. Perform fairness testing (AFT) to detect IDIs and classify them into valid and invalid sets  
 7. Retrain the model using the detected IDIs with varying levels of validity  
 
-The results are stored in the `results/` directory.
+The results are stored in the `results/` directory after execution.
 
 ---
 
