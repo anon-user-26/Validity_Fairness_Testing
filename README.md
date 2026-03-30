@@ -63,8 +63,6 @@ Running `REDI.py` generates the required data and stores the results in these di
 
 The results reported in the paper are provided separately in `results_paper/`.
 
-Each directory contains a dedicated `README.md` with further details.
-
 ---
 
 ## Requirements
@@ -161,15 +159,101 @@ it also includes several implementation-level steps required for execution.
 
 For each selected scenario (model, dataset, protected attribute), the following steps are performed:
 
-1. Split the dataset into training and test sets  
+<!-- 1. Split the dataset into training and test sets  
 2. Construct occurrence tables for validity checking based on the training dataset  
 3. Generate test inputs for IFr  
 4. Generate test inputs for valid-IFr  
 5. Train the original model  
 6. Perform fairness testing (AFT) to detect IDIs and classify them into valid and invalid sets  
-7. Retrain the model using the detected IDIs with varying levels of validity  
+7. Retrain the model using the detected IDIs with varying levels of validity   -->
+
+
+1. **Split the dataset into training and test sets**  
+   - Executed file: `datasets_prepared/split_train_test.py`
+   - Input: `datasets_original/{DATASET}.csv`
+   - Output:
+     - `datasets_prepared/train/{DATASET}_train.csv`
+     - `datasets_prepared/test_accuracy/{DATASET}_test.csv`
+
+2. **Construct occurrence tables for validity checking**  
+   - Executed file: `datasets_prepared/make_occ_table.py`
+   - Input:
+     - `datasets_prepared/train/{DATASET}_train.csv`
+   - Output:
+     - `datasets_prepared/occ_table/{DATASET}_occ_table.csv`
+   - Description:
+     - Builds pairwise occurrence tables (2-way interactions) from the training dataset.
+     - These tables are later used to determine whether an instance is valid.
+
+3. **Generate test inputs for IFr**  
+   - Executed file: `datasets_prepared/make_test_IFr.py`
+   - Input:
+     - dataset name
+     - protected attribute
+   - Output:
+     - `datasets_prepared/test_IFr/{DATASET}_{PROTECTED}_test_IFr_set.csv`
+   - Description:
+     - Generates random inputs and enumerates all variants obtained by changing only the protected attribute.
+     - These test sets are used to compute IFr.
+
+4. **Generate test inputs for valid-IFr**  
+   - Executed file: `datasets_prepared/make_test_valid_IFr.py`
+   - Input:
+     - `datasets_prepared/occ_table/{DATASET}_occ_table.csv`
+     - dataset name
+     - protected attribute
+   - Output:
+     - `datasets_prepared/test_valid_IFr/{DATASET}_{PROTECTED}_test_valid_IFr_set.csv`
+   - Description:
+     - Generates groups of inputs for which at least two protected-attribute variants are valid.
+     - These test sets are used to compute valid-IFr.
+
+5. **Train the original model**  
+   - Executed file: `models_trained/train.py`
+   - Input:
+     - `datasets_prepared/train/{DATASET}_train.csv`
+     - model name
+   - Output:
+     - `models_trained/{MODEL}_{DATASET}.joblib`
+   - Description:
+     - Trains the original classifier under test (CuT) on the training dataset.
+
+6. **Run fairness testing (AFT)**  
+   - Executed files:
+     - `exp.py`
+     - internally calls `aft.py`
+   - Input:
+     - `datasets_prepared/train/{DATASET}_train.csv`
+     - `models_trained/{MODEL}_{DATASET}.joblib`
+     - `datasets_prepared/occ_table/{DATASET}_occ_table.csv`
+   - Output:
+     - `IDIs/raw/aft-{MODEL}-{DATASET}-{PROTECTED}-{RUNTIME}.csv`
+     - `IDIs/valid/aft-{MODEL}-{DATASET}-{PROTECTED}-{RUNTIME}.csv`
+     - `IDIs/invalid/aft-{MODEL}-{DATASET}-{PROTECTED}-{RUNTIME}.csv`
+   - Description:
+     - Runs AFT to detect individual discriminatory instances (IDIs).
+     - The detected IDIs are partitioned into valid and invalid sets using the occurrence table.
+
+7. **Retrain the model using the detected IDIs**  
+   - Executed file: `models_retrained/retrain.py`
+   - Input:
+     - `datasets_prepared/train/{DATASET}_train.csv`
+     - `datasets_prepared/test_accuracy/{DATASET}_test.csv`
+     - `datasets_prepared/test_IFr/{DATASET}_{PROTECTED}_test_IFr_set.csv`
+     - `datasets_prepared/test_valid_IFr/{DATASET}_{PROTECTED}_test_valid_IFr_set.csv`
+     - `IDIs/valid/aft-{MODEL}-{DATASET}-{PROTECTED}-{RUNTIME}.csv`
+     - `IDIs/invalid/aft-{MODEL}-{DATASET}-{PROTECTED}-{RUNTIME}.csv`
+   - Output:
+     - `models_retrained/{MODEL}_{DATASET}_{PROTECTED}.joblib`
+     - `results/{MODEL}/{DATASET}/{PROTECTED}/{MODEL}_{DATASET}_{PROTECTED}_{VALIDITY}.txt`
+   - Description:
+     - Retrains the model with IDI sets of varying validity levels (`0.00, 0.05, ..., 1.00`).
+     - For each validity level, the script records diversity, accuracy, IFr, and valid-IFr.
+
 
 The results are stored in the `results/` directory after execution.
+
+
 
 ---
 
