@@ -90,7 +90,6 @@ python REDI.py --model MODEL --dataset DATASET --protected ATTRIBUTE --runs N
 ```
 
 
----
 
 ### Parameters
 
@@ -99,7 +98,6 @@ python REDI.py --model MODEL --dataset DATASET --protected ATTRIBUTE --runs N
 - `--protected`: Protected attribute (`age`, `sex`, `race`, or `all`)
 - `--runs`: Number of repeated executions (default: 1)
 
----
 
 ### Supported Scenarios
 
@@ -123,7 +121,6 @@ The supported scenarios are:
 
 Specifying unsupported combinations will result in an error.
 
----
 
 ### Using `all`
 
@@ -132,7 +129,6 @@ Each argument (`--model`, `--dataset`, `--protected`) accepts the value `all`.
 - If `all` is specified, all matching predefined scenarios are executed.
 - The script does not generate new combinations beyond the supported scenarios.
 
----
 
 ### Examples
 
