@@ -25,11 +25,11 @@ The repository is structured as follows:
   as well as occurrence tables derived from training data for validity checking.
 
 - `IDIs/`  
-  Individual discriminatory instances detected by fairness testing (AFT), including:
-  - raw IDIs,
-  - valid IDIs,
-  - invalid IDIs.
-
+  Individual discriminatory instances (IDIs) detected by fairness testing (AFT):
+  - `raw/`: all detected IDIs
+  - `valid/`: IDIs satisfying validity constraints
+  - `invalid/`: IDIs violating validity constraints
+  
 - `IFT/`  
   Implementation of AFT used to detect IDIs.
 
