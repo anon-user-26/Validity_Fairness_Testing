@@ -156,16 +156,9 @@ python REDI.py --model all --dataset all --protected all --runs 10
 Executing `REDI.py` runs the experimental pipeline used in this study.
 While the pipeline follows the methodology described in the paper,
 it also includes several implementation-level steps required for execution.
+The results are stored in the `results/` directory after execution.
 
 For each selected scenario (model, dataset, protected attribute), the following steps are performed:
-
-<!-- 1. Split the dataset into training and test sets  
-2. Construct occurrence tables for validity checking based on the training dataset  
-3. Generate test inputs for IFr  
-4. Generate test inputs for valid-IFr  
-5. Train the original model  
-6. Perform fairness testing (AFT) to detect IDIs and classify them into valid and invalid sets  
-7. Retrain the model using the detected IDIs with varying levels of validity   -->
 
 
 1. **Split the dataset into training and test sets**  
@@ -220,8 +213,8 @@ For each selected scenario (model, dataset, protected attribute), the following 
 
 6. **Run fairness testing (AFT)**  
    - Executed files:
-     - `exp.py`
-     - internally calls `aft.py`
+     - `IFT/exp.py`
+     - internally calls `IFT/aft.py`
    - Input:
      - `datasets_prepared/train/{DATASET}_train.csv`
      - `models_trained/{MODEL}_{DATASET}.joblib`
@@ -245,14 +238,11 @@ For each selected scenario (model, dataset, protected attribute), the following 
      - `IDIs/invalid/aft-{MODEL}-{DATASET}-{PROTECTED}-{RUNTIME}.csv`
    - Output:
      - `models_retrained/{MODEL}_{DATASET}_{PROTECTED}.joblib`
+       (the latest retrained model; overwritten across validity settings)
      - `results/{MODEL}/{DATASET}/{PROTECTED}/{MODEL}_{DATASET}_{PROTECTED}_{VALIDITY}.txt`
    - Description:
      - Retrains the model with IDI sets of varying validity levels (`0.00, 0.05, ..., 1.00`).
      - For each validity level, the script records diversity, accuracy, IFr, and valid-IFr.
-
-
-The results are stored in the `results/` directory after execution.
-
 
 
 ---
