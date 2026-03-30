@@ -29,7 +29,7 @@ The repository is structured as follows:
   - `raw/`: all detected IDIs
   - `valid/`: IDIs satisfying validity constraints
   - `invalid/`: IDIs violating validity constraints
-  
+
 - `IFT/`  
   Implementation of AFT used to detect IDIs.
 
@@ -147,6 +147,34 @@ Run all predefined scenarios 10 times each:
 ```
 python REDI.py --model all --dataset all --protected all --runs 10
 ```
+
+---
+
+### Quick Sanity Check
+
+Some preprocessing steps, especially `datasets_prepared/make_test_valid_IFr.py`,
+may take a relatively long time because they repeatedly generate random inputs
+until a sufficient number of valid instances are obtained.
+
+If you only want to verify that the pipeline runs correctly, you can temporarily
+reduce the generation parameters in `datasets_prepared/make_test_valid_IFr.py`.
+
+For example:
+
+```python
+samples = 10
+num_trials = 40
+```
+
+instead of the default setting:
+
+```python
+samples = 100
+num_trials = 400
+```
+
+This lightweight setting is intended only for a quick execution check.
+For reproducing comparable results reported in the paper, use the default parameter settings.
 
 
 ---

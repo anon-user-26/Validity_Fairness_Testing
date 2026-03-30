@@ -131,7 +131,7 @@ def run_pipeline(root_dir, model_name, dataset_name, protected_name, runtime):
     run_command(
         [
             sys.executable,
-            str(root_dir / "exp.py"),
+            str(root_dir / "IFT" / "exp.py"),
             "--dataset_name",
             dataset_name,
             "--protected_attr",
