@@ -254,6 +254,10 @@ For each selected scenario (model, dataset, protected attribute), the following 
    - Description:
      - Runs AFT to detect individual discriminatory instances (IDIs).
      - The detected IDIs are partitioned into valid and invalid sets using the occurrence table.
+   - Note:
+     - AFT relies on a stochastic search process and may occasionally fail to detect any IDIs in some runs.
+     - This may appear as repeated logs such as `#Disc=0` during execution.
+     - In such cases, the experiment may not proceed as expected, and we recommend re-running the pipeline.
 
 7. **Retrain the model using the detected IDIs**  
    - Executed file: `models_retrained/retrain.py`
