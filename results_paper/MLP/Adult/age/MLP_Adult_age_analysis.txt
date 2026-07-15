@@ -3,6 +3,13 @@ r(validity, L0) = -0.938868277977633, p = 3.039111184932608e-10
 r(validity, L1) = -0.9217954984152562, p = 2.9481221908156385e-09
 r(validity, bL0) = -0.9207747360841982, p = 3.3211315919601248e-09
 
+
+=== Simple Correlations (with p-values) ===
+  r(validity, acc_imp) = -0.2164486166370734, p = 0.3459913900466205
+  r(validity, IFr_imp) = -0.25195937114937855, p = 0.2705408910875611
+  r(validity, valid_IFr_imp) = 0.3834374275959618, p = 0.08619321650924583
+
+
 === Partial Correlations (with p-values) ===
 
 [acc_imp]
@@ -19,6 +26,18 @@ r(validity, bL0) = -0.9207747360841982, p = 3.3211315919601248e-09
   r(validity, valid_IFr_imp | L0) = 0.21082068887193683, p = 0.3722864459197677
   r(validity, valid_IFr_imp | L1) = 0.23979219078069317, p = 0.30854066020625703
   r(validity, valid_IFr_imp | bL0) = 0.22029545474335607, p = 0.3506692457994798
+
+
+=== Simple Regression (target = alpha * validity + beta) ===
+
+[acc_imp]
+  alpha=-0.945123285842745, beta=-0.3892842650647792, R2=0.04685000364410297
+
+[IFr_imp]
+  alpha=-9.946384364989045, beta=51.551233721776356, R2=0.06348352470999052
+
+[valid_IFr_imp]
+  alpha=14.85924756642985, beta=31.91660089450146, R2=0.14702426088140852
 
 
 === Multiple Regression (target = alpha * validity + beta * distance + gamma) ===

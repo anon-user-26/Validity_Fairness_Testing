@@ -56,6 +56,20 @@ def simple_corr_with_p(x, y):
     return r_value, p_value
 
 
+def simple_regression(validity, target):
+    """Fit target = alpha * validity + beta."""
+    design_matrix = np.column_stack([validity, np.ones(len(validity))])
+    coef, _, _, _ = np.linalg.lstsq(design_matrix, target, rcond=None)
+    alpha, beta = coef
+
+    predicted = design_matrix @ coef
+    ss_res = np.sum((target - predicted) ** 2)
+    ss_tot = np.sum((target - np.mean(target)) ** 2)
+    r_squared = 1 - ss_res / ss_tot if ss_tot != 0 else float("nan")
+
+    return alpha, beta, r_squared
+
+
 def parse_average_file(file_path):
     """Extract the mean value of each metric from an *_average.txt file."""
     metrics = {}
@@ -170,6 +184,18 @@ def analyze_directory(model_name, dataset_name, protected_name):
     corr_l1, p_l1 = simple_corr_with_p(validity_arr, l1_arr)
     corr_bl0, p_bl0 = simple_corr_with_p(validity_arr, bl0_arr)
 
+    simple_corr_results = {
+        "acc_imp": simple_corr_with_p(validity_arr, acc_arr),
+        "IFr_imp": simple_corr_with_p(validity_arr, ifr_arr),
+        "valid_IFr_imp": simple_corr_with_p(validity_arr, valid_ifr_arr),
+    }
+
+    simple_regression_results = {
+        "acc_imp": simple_regression(validity_arr, acc_arr),
+        "IFr_imp": simple_regression(validity_arr, ifr_arr),
+        "valid_IFr_imp": simple_regression(validity_arr, valid_ifr_arr),
+    }
+
     partial_corr_results = {
         "acc_imp": {
             "L0": partial_corr_with_p(validity_arr, acc_arr, l0_arr),
@@ -213,10 +239,16 @@ def analyze_directory(model_name, dataset_name, protected_name):
         out.write(
             f"r(validity, L0) = {corr_l0}, p = {p_l0}\n"
             f"r(validity, L1) = {corr_l1}, p = {p_l1}\n"
-            f"r(validity, bL0) = {corr_bl0}, p = {p_bl0}\n\n"
+            f"r(validity, bL0) = {corr_bl0}, p = {p_bl0}\n\n\n"
         )
 
-        out.write("=== Partial Correlations (with p-values) ===\n")
+        out.write("=== Simple Correlations (with p-values) ===\n")
+        for metric_name, (r_value, p_value) in simple_corr_results.items():
+            out.write(
+                f"  r(validity, {metric_name}) = {r_value}, p = {p_value}\n"
+            )
+
+        out.write("\n\n=== Partial Correlations (with p-values) ===\n")
         for metric_name, controls in partial_corr_results.items():
             out.write(f"\n[{metric_name}]\n")
             for control_name in ["L0", "L1", "bL0"]:
@@ -225,6 +257,17 @@ def analyze_directory(model_name, dataset_name, protected_name):
                     f"  r(validity, {metric_name} | {control_name}) = "
                     f"{r_value}, p = {p_value}\n"
                 )
+
+        out.write(
+            "\n\n=== Simple Regression "
+            "(target = alpha * validity + beta) ===\n"
+        )
+        for metric_name, result in simple_regression_results.items():
+            alpha, beta, r_squared = result
+            out.write(f"\n[{metric_name}]\n")
+            out.write(
+                f"  alpha={alpha}, beta={beta}, R2={r_squared}\n"
+            )
 
         out.write(
             "\n\n=== Multiple Regression "
